@@ -1,4 +1,5 @@
 #include<bits/stdc++.h> 
+
 using namespace std; 
 
 void writeToFile(vector<string> result)
@@ -18,19 +19,41 @@ void writeToFile(vector<string> result)
 	}
 }
 
+void hashAndGetBits(int id)
+{
+	int bin[64], i = 0, j = 0, numBits = 3, leastBits[64];
+	// Convert to binary
+	while (id > 0) {
+		bin[i] = id % 2;
+		id = id / 2;
+		i++;
+	}
+
+	// Save least significant bits
+	for (j = 0; j < numBits; j++) {
+		leastBits[j] = bin[j];
+	}
+
+}
+
 void getNextLineAndHash(istream& str)
 {
 	string cell, line;
 	vector<string> result;
+	int id, i = 0;
 
 	// This iterates through the whole file
 	while(getline(str, line)){
 		stringstream lineStream(line);
 
+		// Get the each line
 		while(getline(lineStream,cell, ','))
 		{
 			result.push_back(cell);
+			id = stoi(result.at(i));
+			hashAndGetBits(id);
 		}
+		i += 4;
 	}
 	// **Still need to actually hash and make the bucket array** //
 
