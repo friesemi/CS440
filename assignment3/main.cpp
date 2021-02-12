@@ -1,6 +1,7 @@
-#include<bits/stdc++.h> 
+#include <bits/stdc++.h>
+#include <bitset>
 
-using namespace std; 
+using namespace std;
 
 void writeToFile(vector<string> result)
 {
@@ -19,45 +20,73 @@ void writeToFile(vector<string> result)
 	}
 }
 
-void hashAndGetBits(int id)
+int hashAndGetBits(int id, int numBits)
 {
-	int bin[64], i = 0, j = 0, numBits = 3, leastBits[64];
 	// Convert to binary
-	while (id > 0) {
-		bin[i] = id % 2;
-		id = id / 2;
-		i++;
-	}
+	//cout << id << endl;
+	string binary = bitset<32>(id).to_string();
+	//cout << binary << endl;
 
-	// Save least significant bits
-	for (j = 0; j < numBits; j++) {
-		leastBits[j] = bin[j];
-	}
+	// Grab n least significant bits
+	string keyBin = binary.substr(binary.length() - numBits);
+	//cout << keyBin << endl;
 
+	int key = bitset<32>(keyBin).to_ulong();
+  //cout << key << endl;
+
+	return key;
 }
 
 void getNextLineAndHash(istream& str)
 {
 	string cell, line;
 	vector<string> result;
-	int id, i = 0;
+	int id, key, i = 0, numBits = 1, numBuckets = 1;
 
-	// This iterates through the whole file
+	//Write initial numBuckets and numBits to beginning of output file
+
+	// This iterates through the whole file line by line
 	while(getline(str, line)){
 		stringstream lineStream(line);
 
-		// Get the each line
+		// Get the data for current line
 		while(getline(lineStream,cell, ','))
 		{
 			result.push_back(cell);
-			id = stoi(result.at(i));
-			hashAndGetBits(id);
 		}
+
+		// Use the id to get the key for which bucket it should be placed in
+		id = stoi(result.at(i));
+		key = hashAndGetBits(id, numBits);
+
+		// Find memory address with key from bucket array (DO BUCKET ARRAY AT END)
+		// getMemAddr(key, bucketArray)
+
+		store(key, numBuckets, result);
+
+		//checkForCapacity()
+			//increase capacity if needed (increase numBuckets)
+			//increase numBits if needed
+			//write the numBuckets and numBits to beginning of output file
+			//allocate new bucket
+			//Check bucket that is the bit flip of new bucket. Check all records and move if needed
+
 		i += 4;
 	}
-	// **Still need to actually hash and make the bucket array** //
+	//writeToFile(result);
+}
 
-	writeToFile(result);
+void store(int key, int numBuckets, vector<string> result) {
+	// Check if bit flip is needed
+	if (key > numBuckets) {
+		//bitFlip(key)
+	}
+
+	// Pull line *key + 2* from file
+
+	// Append result to end of line
+
+	// Write line back to where you pulled it from
 }
 
 // This will read from CSV file and create hash
@@ -87,9 +116,9 @@ void getHashIndex(string lookupId)
 	}
 }
 
-//Driver method to test map class 
-int main() 
-{ 
+//Driver method to test map class
+int main()
+{
 	//User input for Creation or Lookup
 	while(1){
 		string input, split;
@@ -112,5 +141,5 @@ int main()
 			}
 		}
 	}
-	return 0; 
-} 
+	return 0;
+}
