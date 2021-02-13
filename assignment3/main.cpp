@@ -59,10 +59,17 @@ int hashAndGetBits(int id, int numBits)
 vector<long> updateBucketArray(vector<long> bucketArray, int numBuckets) {
 	fstream myFile("EmployeeIndex.txt");
 	string dummy;
+	int runningLength = 0;
 
+	myFile.seekg(0, ios::beg);
 	for (int i = 1; i < numBuckets; i++) {
 		getline(myFile, dummy);
-		bucketArray.at(i) = myFile.tellg();
+		//cout << bucketArray.at(i) << endl;
+		//cout << "Dummy:" << dummy << endl;
+		runningLength += (dummy.length() + 2);
+		bucketArray.at(i) = runningLength;
+		//cout << myFile.tellg() << endl;
+		//cout << runningLength << endl;
 	}
 
 	return bucketArray;
@@ -88,21 +95,22 @@ vector<long> store(int key, int numBuckets, vector<string> result, vector<long> 
 	long pos;
 
 	// Check if bit flip is needed
-	cout << key << endl;
+	cout << "Key before flip: " << key << endl;
 	if (key+1 > numBuckets) {
 		key = bitFlip(key);
 	}
-	cout << key << endl << endl;
+	cout << "Key after flip: " << key << endl;
 
 
 	// Get position of bucket in file
 	pos = bucketArray.at(key);
-
+	//cout << pos << endl;
 
 	if (myFile.is_open()) {
 		// Read in bucket
-	  myFile.seekg(pos);
+		myFile.seekg(pos);
 		getline(myFile, bucket);
+		cout << bucket << endl;
 
 		// Append result to end of bucket
 		for (int i = 0; i < 4; i++) {
@@ -110,8 +118,9 @@ vector<long> store(int key, int numBuckets, vector<string> result, vector<long> 
 			bucket.append(" ");
 		}
 		bucket.append("; ");
-
 		cout << bucket << endl;
+
+		//cout << bucket << endl;
 
 		// Write bucket back to where you pulled it from
 		ofstream makeFile("temp.txt");
@@ -119,27 +128,38 @@ vector<long> store(int key, int numBuckets, vector<string> result, vector<long> 
 		fstream tempFile("temp.txt");
 
 		if (tempFile.is_open()) {
+			int lineNum = 0;
 			myFile.seekg(0, ios::beg);
 
-			// Copy old buckets over
+			// Copy unchanged buckets over
 			for (int i = 0; i < key; i++) {
 				getline(myFile, currLine);
+				cout << "Unchanged buckets:" << currLine << endl;
 				tempFile << currLine << endl;
+				lineNum++;
 			}
 
 			// Copy in changed bucket
+			cout << "changed bucket:" << bucket << endl;
 			tempFile << bucket;
 			// If not putting in last bucket, tack endl back on
 			if (key + 1 != numBuckets) {
 				tempFile << endl;
 			}
+			lineNum++;
 
 			// Throw out old version of changed bucket
 			getline(myFile, currLine);
 
 			// Copy in rest of file
 			while (getline(myFile, currLine)) {
+				cout << "rest of file:" << currLine << endl;
 				tempFile << currLine;
+				lineNum++;
+				if (lineNum != numBuckets) {
+					cout << "NEW LKINE" << endl;
+					tempFile << endl;
+				}
 			}
 
 			tempFile.close();
@@ -179,15 +199,15 @@ vector<long> initIndex(vector<long> bucketArray) {
 
 vector<long> checkForCapacity(int* numBuckets, int numRecords, int* numBits, vector<long> bucketArray) {
 	fstream myFile("EmployeeIndex.txt");
+	float currCap;
 
 	// Add a bucket if above 80% capacity
-	cout << "TEST" << endl;
-	if ((numRecords / ((*numBuckets)*4) ) > 0.8) {
-
-		cout << "TEST" << endl;
+	currCap =  ((float) numRecords) / ((*numBuckets)*4);
+	cout << currCap << endl;
+	if (currCap > 0.8) {
 		(*numBuckets)++;
 
-		if ((*numBuckets) > (2^(*numBits))) {
+		if ( (*numBuckets) > pow(2, (*numBits)) ) {
 			(*numBits)++;
 		}
 
@@ -199,6 +219,8 @@ vector<long> checkForCapacity(int* numBuckets, int numRecords, int* numBits, vec
 
 		// Move flip bits
 	}
+
+	return bucketArray;
 }
 
 void getNextLineAndHash(istream& str)
@@ -224,14 +246,13 @@ void getNextLineAndHash(istream& str)
 		id = stoi(result.at(0));
 		key = hashAndGetBits(id, numBits);
 
-		// Find memory address with key from bucket array (DO BUCKET ARRAY AT END)
-		// getMemAddr(key, bucketArray)
-
 		bucketArray = store(key, numBuckets, result, bucketArray);
 		numRecords++;
 
-		cout << "TEST" << endl;
 		bucketArray = checkForCapacity(&numBuckets, numRecords, &numBits, bucketArray);
+		cout << numBuckets << endl;
+		cout << numBits << endl;
+		cout << endl;
 	}
   // Write numBits and numBuckets to a file for use with lookup
 	writeBitsBuckets(numBits, numBuckets);
@@ -242,7 +263,7 @@ void getNextLineAndHash(istream& str)
 void createHashIndex()
 {
 	vector<string> result;
-	ifstream file ("test.csv");
+	ifstream file ("Employees.csv");
 	if (file.is_open()){
 		getNextLineAndHash(file);
 
