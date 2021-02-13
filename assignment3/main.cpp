@@ -38,6 +38,18 @@ void writeBitsBuckets(int numBits, int numBuckets) {
 	}
 }
 
+void writeBucketArray(vector<long> bucketArray) {
+	ofstream outputFile ("BucketArray.txt");
+
+	if (outputFile.is_open()) {
+		for (int i = 0; i < bucketArray.size(); i++) {
+			outputFile << bucketArray.at(i) << endl;
+		}
+
+		outputFile.close();
+	}
+}
+
 int hashAndGetBits(int id, int numBits)
 {
 	// Convert to binary
@@ -72,6 +84,8 @@ vector<long> updateBucketArray(vector<long> bucketArray, int numBuckets) {
 		//cout << runningLength << endl;
 	}
 
+	myFile.close();
+
 	return bucketArray;
 }
 
@@ -89,7 +103,6 @@ int bitFlip(int key) {
 }
 
 vector<long> store(int key, int numBuckets, vector<string> result, vector<long> bucketArray) {
-	int bytesToBucket;
 	string bucket = "", currLine;
 	fstream myFile("EmployeeIndex.txt");
 	long pos;
@@ -197,6 +210,124 @@ vector<long> initIndex(vector<long> bucketArray) {
 	return bucketArray;
 }
 
+vector<long> resort(int numBits, int numBuckets, vector<long> bucketArray) {
+	string bucket = "", currRecord, currLine;
+	fstream myFile("EmployeeIndex.txt");
+	long pos;
+	int bitFlipBucketKey, newBucketKey, currId, currKey;
+	vector<string> records, moveRecords, keepRecords;
+
+	// Figure out which bucket we need to check for possible movable records
+	newBucketKey = numBuckets-1;
+	bitFlipBucketKey = bitFlip(newBucketKey);
+
+	cout << "bucket key to check: " <<bitFlipBucketKey << endl;
+
+	// Get position of bucket in file
+	pos = bucketArray.at(bitFlipBucketKey);
+	//cout << pos << endl;
+
+	if (myFile.is_open()) {
+		// Read in bucket
+		myFile.seekg(pos);
+		getline(myFile, bucket);
+
+		cout << bucket << endl;
+
+		// Separate records
+		while (bucket != " ") {
+			records.push_back(bucket.substr(0, bucket.find(';')));
+			bucket.erase(0, (bucket.find(';')+1));
+		}
+
+
+		// Go through all the records and seperate the ones that need to be moved from the ones that don't
+		for (int i = 0; i < records.size(); i++) {
+			// Extract id
+			currRecord = records.at(i);
+			currId = stoi(currRecord.substr(1, currRecord.find(" ", 1)-1));
+
+			// Get the key for this record
+			currKey = hashAndGetBits(currId, numBits);
+
+			// Check if record should be moved
+			if (currKey == (numBuckets - 1)) {
+				moveRecords.push_back(currRecord);
+			}
+			else {
+				keepRecords.push_back(currRecord);
+			}
+		}
+
+		// Rewrite time
+		ofstream makeFile("temp.txt");
+		makeFile.close();
+		fstream tempFile("temp.txt");
+
+		if (tempFile.is_open()) {
+			int i = 0;
+			myFile.seekg(0, ios::beg);
+
+			// Copy unchanged buckets over
+			for (i; i < bitFlipBucketKey; i++) {
+				getline(myFile, currLine);
+				cout << "Unchanged buckets:" << currLine << endl;
+				tempFile << currLine << endl;
+			}
+
+			// Rebuild the bucket for the records that are being kept
+			bucket = "";
+			for (int j = 0; j < keepRecords.size(); j++) {
+				bucket.append(keepRecords.at(j));
+				bucket.append(";");
+			}
+			bucket.append(" ");
+
+			// Copy in changed bucket with kept files
+			cout << "changed bucket:" << bucket << endl;
+			tempFile << bucket <<endl;
+			i++;
+
+			// Throw out old version of changed bucket
+			getline(myFile, currLine);
+
+			// Copy unchanged buckets over
+			for (i; i < newBucketKey; i++) {
+				getline(myFile, currLine);
+				cout << "Unchanged buckets:" << currLine << endl;
+				tempFile << currLine << endl;
+			}
+
+			// Rebuild the bucket for the records that are being moved
+			bucket = "";
+			for (int j = 0; j < moveRecords.size(); j++) {
+				bucket.append(moveRecords.at(j));
+				bucket.append(";");
+			}
+			bucket.append(" ");
+
+			// Copy in changed bucket with moved files
+			cout << "changed bucket:" << bucket << endl;
+			tempFile << bucket;
+
+			tempFile.close();
+		}
+
+		myFile.close();
+
+		// Remove old file
+		remove("EmployeeIndex.txt");
+
+		// Rename new file
+		rename("temp.txt", "EmployeeIndex.txt");
+
+		// Update bucket array
+		bucketArray = updateBucketArray(bucketArray, numBuckets);
+	}
+
+	return bucketArray;
+}
+
 vector<long> checkForCapacity(int* numBuckets, int numRecords, int* numBits, vector<long> bucketArray) {
 	fstream myFile("EmployeeIndex.txt");
 	float currCap;
@@ -217,7 +348,10 @@ vector<long> checkForCapacity(int* numBuckets, int numRecords, int* numBits, vec
 		bucketArray.push_back(myFile.tellg());
 		myFile << " ";
 
+		myFile.close();
+
 		// Move flip bits
+		bucketArray = resort(*numBits, *numBuckets, bucketArray);
 	}
 
 	return bucketArray;
@@ -256,14 +390,16 @@ void getNextLineAndHash(istream& str)
 	}
   // Write numBits and numBuckets to a file for use with lookup
 	writeBitsBuckets(numBits, numBuckets);
-	//writeToFile(result);
+
+	// Write bucketArray to file for use with lookup
+	writeBucketArray(bucketArray);
 }
 
 // This will read from CSV file and create hash
 void createHashIndex()
 {
 	vector<string> result;
-	ifstream file ("Employees.csv");
+	ifstream file ("test.csv");
 	if (file.is_open()){
 		getNextLineAndHash(file);
 
