@@ -399,7 +399,7 @@ void getNextLineAndHash(istream& str)
 void createHashIndex()
 {
 	vector<string> result;
-	ifstream file ("test.csv");
+	ifstream file ("Employees.csv");
 	if (file.is_open()){
 		getNextLineAndHash(file);
 
@@ -407,18 +407,102 @@ void createHashIndex()
 	}
 }
 
+void importBitsAndBuckets(int* numBits, int* numBuckets) {
+	fstream myFile("BitsandBuckets.txt");
+	string temp;
+
+	getline(myFile, temp);
+	*numBits = stoi(temp);
+
+	getline(myFile, temp);
+	*numBuckets = stoi(temp);
+}
+
+vector<long> importBucketArray() {
+	fstream myFile("BucketArray.txt");
+	string temp;
+	vector<long> bucketArray;
+
+	while (getline(myFile, temp)) {
+			bucketArray.push_back(stoi(temp));
+	}
+
+	return bucketArray;
+}
+
 void getHashIndex(string lookupId)
 {
+	int key, numBits, numBuckets, currId;
+	vector<long> bucketArray;
+	vector<string> records;
+	long pos;
+	ifstream myFile ("EmployeeIndex.txt");
+	string bucket, currRecord, temp;
+
+	importBitsAndBuckets(&numBits, &numBuckets);
+	bucketArray = importBucketArray();
+
 	// Hash id to get array index
+	key = hashAndGetBits(stoi(lookupId), numBits);
 
-	// This reads the output file and finds the info from the id
-	ifstream readFile ("EmployeeIndex.txt");
-	string data;
+	// Bit flip if necessary
+	if (key+1 > numBuckets) {
+		key = bitFlip(key);
+	}
 
-	while(!readFile.eof()){
-		getline(readFile, data);
-		if(data.rfind(lookupId, 8) != string::npos)
-			cout << data << endl;
+	// Get position of bucket in file
+	pos = bucketArray.at(key);
+
+	if (myFile.is_open()) {
+		// Read in bucket
+		myFile.seekg(pos);
+		getline(myFile, bucket);
+
+		// Separate records
+		while (bucket != " ") {
+			records.push_back(bucket.substr(0, bucket.find(';')));
+			bucket.erase(0, (bucket.find(';')+1));
+		}
+
+		// Go through all the records and find the one we are looking for
+		for (int i = 0; i < records.size(); i++) {
+			// Extract id
+			currRecord = records.at(i);
+			currId = stoi(currRecord.substr(1, currRecord.find(" ", 1)-1));
+
+			// Check to see if this is the correct record
+			if (currId == stoi(lookupId)) {
+				cout << "Here is the info corresponding to that ID:" << endl;
+
+				temp = currRecord.substr(0, currRecord.find(" ", 1));
+				currRecord.erase(0, (currRecord.find(" ", 1)));
+				cout << "ID:" << temp << endl;
+
+				temp = currRecord.substr(0, currRecord.find(" ", 1));
+				currRecord.erase(0, (currRecord.find(" ", 1)));
+				cout << "First Name:" << temp << endl;
+
+				temp = currRecord.substr(0, currRecord.find(" ", 1));
+				currRecord.erase(0, (currRecord.find(" ", 1)));
+				cout << "Last Name:" << temp << endl;
+
+				temp = currRecord.substr(0, currRecord.length()-10);
+				currRecord.erase(0, currRecord.length()-10);
+				cout << "Bio:" << temp << endl;
+
+				temp = currRecord.substr(0, currRecord.find(" ", 1));
+				currRecord.erase(0, (currRecord.find(" ", 1)));
+				cout << "Manager ID:" << temp << endl;
+
+				break;
+			}
+
+			if (i+1 == records.size()) {
+				cout << "No information corresponding to that ID could be found." << endl;
+			}
+		}
+
+		myFile.close();
 	}
 }
 
