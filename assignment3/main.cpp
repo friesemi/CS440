@@ -507,29 +507,19 @@ void getHashIndex(string lookupId)
 }
 
 //Driver method to test map class
-int main()
+int main(int argc, char *argv[])
 {
-	//User input for Creation or Lookup
-	while(1){
-		string input, split;
-		cout << "Enter a command (C or L) with the id if necessary: ";
-		getline(cin, input);
-		stringstream splitter(input);
-		while (getline(splitter, split, ' ')){
-			if (split == "C"){
-				cout << "Creating Hash Index" << endl;
-				createHashIndex();
-				break;
-				}
-			else if (split == "L"){
-				getline(splitter, split, ' ');
-				cout << "Looking up " << split << endl;
-				getHashIndex(split);
-			}
-			else {
-				cout << "Incorrect Inputs" << endl;
-			}
-		}
+	cout << argv[1] << endl;
+	if (string(argv[1]) == "-C") {
+		cout << "Creating Hash Index" << endl;
+		createHashIndex();
+	}
+	else if (string(argv[1]) == "-L") {
+		cout << "Looking up " << argv[2] << endl;
+		getHashIndex(string(argv[2]));
+	}
+	else {
+		cout << "Incorrect Inputs" << endl;
 	}
 	return 0;
 }
