@@ -2,7 +2,6 @@
 #include <bitset>
 #include <string>
 #include <fstream>
-#include <conio.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
