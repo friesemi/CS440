@@ -77,8 +77,8 @@ vector<long> updateBucketArray(vector<long> bucketArray, int numBuckets) {
 		getline(myFile, dummy);
 		//cout << bucketArray.at(i) << endl;
 		//cout << "Dummy:" << dummy << endl;
-		runningLength += (dummy.length() + 2);
-		bucketArray.at(i) = runningLength;
+		//runningLength += (dummy.length() + 2);
+		bucketArray.at(i) = myFile.tellg();
 		//cout << myFile.tellg() << endl;
 		//cout << runningLength << endl;
 	}
