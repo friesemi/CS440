@@ -107,11 +107,11 @@ vector<long> store(int key, int numBuckets, vector<string> result, vector<long> 
 	long pos;
 
 	// Check if bit flip is needed
-	cout << "Key before flip: " << key << endl;
+	//cout << "Key before flip: " << key << endl;
 	if (key+1 > numBuckets) {
 		key = bitFlip(key);
 	}
-	cout << "Key after flip: " << key << endl;
+	//cout << "Key after flip: " << key << endl;
 
 
 	// Get position of bucket in file
@@ -122,7 +122,7 @@ vector<long> store(int key, int numBuckets, vector<string> result, vector<long> 
 		// Read in bucket
 		myFile.seekg(pos);
 		getline(myFile, bucket);
-		cout << bucket << endl;
+		//cout << bucket << endl;
 
 		// Append result to end of bucket
 		for (int i = 0; i < 4; i++) {
@@ -130,7 +130,7 @@ vector<long> store(int key, int numBuckets, vector<string> result, vector<long> 
 			bucket.append(" ");
 		}
 		bucket.append("; ");
-		cout << bucket << endl;
+		//cout << bucket << endl;
 
 		//cout << bucket << endl;
 
@@ -146,13 +146,13 @@ vector<long> store(int key, int numBuckets, vector<string> result, vector<long> 
 			// Copy unchanged buckets over
 			for (int i = 0; i < key; i++) {
 				getline(myFile, currLine);
-				cout << "Unchanged buckets:" << currLine << endl;
+				//cout << "Unchanged buckets:" << currLine << endl;
 				tempFile << currLine << endl;
 				lineNum++;
 			}
 
 			// Copy in changed bucket
-			cout << "changed bucket:" << bucket << endl;
+			//cout << "changed bucket:" << bucket << endl;
 			tempFile << bucket;
 			// If not putting in last bucket, tack endl back on
 			if (key + 1 != numBuckets) {
@@ -165,11 +165,11 @@ vector<long> store(int key, int numBuckets, vector<string> result, vector<long> 
 
 			// Copy in rest of file
 			while (getline(myFile, currLine)) {
-				cout << "rest of file:" << currLine << endl;
+				//cout << "rest of file:" << currLine << endl;
 				tempFile << currLine;
 				lineNum++;
 				if (lineNum != numBuckets) {
-					cout << "NEW LKINE" << endl;
+					//cout << "NEW LKINE" << endl;
 					tempFile << endl;
 				}
 			}
@@ -220,7 +220,7 @@ vector<long> resort(int numBits, int numBuckets, vector<long> bucketArray) {
 	newBucketKey = numBuckets-1;
 	bitFlipBucketKey = bitFlip(newBucketKey);
 
-	cout << "bucket key to check: " <<bitFlipBucketKey << endl;
+	//cout << "bucket key to check: " <<bitFlipBucketKey << endl;
 
 	// Get position of bucket in file
 	pos = bucketArray.at(bitFlipBucketKey);
@@ -231,7 +231,7 @@ vector<long> resort(int numBits, int numBuckets, vector<long> bucketArray) {
 		myFile.seekg(pos);
 		getline(myFile, bucket);
 
-		cout << bucket << endl;
+		//cout << bucket << endl;
 
 		// Separate records
 		while (bucket != " ") {
@@ -270,7 +270,7 @@ vector<long> resort(int numBits, int numBuckets, vector<long> bucketArray) {
 			// Copy unchanged buckets over
 			for (i; i < bitFlipBucketKey; i++) {
 				getline(myFile, currLine);
-				cout << "Unchanged buckets:" << currLine << endl;
+				//cout << "Unchanged buckets:" << currLine << endl;
 				tempFile << currLine << endl;
 			}
 
@@ -283,7 +283,7 @@ vector<long> resort(int numBits, int numBuckets, vector<long> bucketArray) {
 			bucket.append(" ");
 
 			// Copy in changed bucket with kept files
-			cout << "changed bucket:" << bucket << endl;
+			//cout << "changed bucket:" << bucket << endl;
 			tempFile << bucket <<endl;
 			i++;
 
@@ -293,7 +293,7 @@ vector<long> resort(int numBits, int numBuckets, vector<long> bucketArray) {
 			// Copy unchanged buckets over
 			for (i; i < newBucketKey; i++) {
 				getline(myFile, currLine);
-				cout << "Unchanged buckets:" << currLine << endl;
+				//cout << "Unchanged buckets:" << currLine << endl;
 				tempFile << currLine << endl;
 			}
 
@@ -306,7 +306,7 @@ vector<long> resort(int numBits, int numBuckets, vector<long> bucketArray) {
 			bucket.append(" ");
 
 			// Copy in changed bucket with moved files
-			cout << "changed bucket:" << bucket << endl;
+			//cout << "changed bucket:" << bucket << endl;
 			tempFile << bucket;
 
 			tempFile.close();
@@ -333,7 +333,7 @@ vector<long> checkForCapacity(int* numBuckets, int numRecords, int* numBits, vec
 
 	// Add a bucket if above 80% capacity
 	currCap =  ((float) numRecords) / ((*numBuckets)*4);
-	cout << currCap << endl;
+	//cout << currCap << endl;
 	if (currCap > 0.8) {
 		(*numBuckets)++;
 
@@ -383,9 +383,9 @@ void getNextLineAndHash(istream& str)
 		numRecords++;
 
 		bucketArray = checkForCapacity(&numBuckets, numRecords, &numBits, bucketArray);
-		cout << numBuckets << endl;
-		cout << numBits << endl;
-		cout << endl;
+		//cout << numBuckets << endl;
+		//cout << numBits << endl;
+		//cout << endl;
 	}
   // Write numBits and numBuckets to a file for use with lookup
 	writeBitsBuckets(numBits, numBuckets);
@@ -508,7 +508,6 @@ void getHashIndex(string lookupId)
 //Driver method to test map class
 int main(int argc, char *argv[])
 {
-	cout << argv[1] << endl;
 	if (string(argv[1]) == "-C") {
 		cout << "Creating Hash Index" << endl;
 		createHashIndex();
