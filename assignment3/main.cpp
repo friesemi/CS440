@@ -491,7 +491,7 @@ void getHashIndex(string lookupId)
 
 				temp = currRecord.substr(0, currRecord.find(" ", 1));
 				currRecord.erase(0, (currRecord.find(" ", 1)));
-				cout << "Manager ID:" << temp << endl;
+				cout << "Manager ID: " << temp << endl;
 
 				break;
 			}
