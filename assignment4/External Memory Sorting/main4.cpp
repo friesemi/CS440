@@ -2,11 +2,15 @@
 
 using namespace std;
 
-vector<string> getEmployeesFromFile() {
+// Used to track number of runs and increment block sizes
+int runNum = 1;
+
+// Fill a vector with employees from the given file
+vector<string> getEmployeesFromFile(string fileName) {
 	vector<string> employees;
 	string cell, line;
 
-	ifstream file ("Emp.csv");
+	ifstream file (fileName);
 	if (file.is_open()){
 		while (getline(file, line)){
 			employees.push_back(line);
@@ -16,30 +20,30 @@ vector<string> getEmployeesFromFile() {
 	return employees;
 }
 
-// Fill a block with 22 employees
-vector<string> getEmployeeBlock(const vector<string> &emps, int initIndex) {
+// Fill a block with employees (22*runNum)
+vector<string> getEmployeeBlock(const vector<string> &emps, int initIndex, int incVal) {
 
 	vector<string> empBlock;
-	int j = 0, incVal = 22;
 
+	// Fill block with remaining employees if they don't fill entire block
 	if(initIndex + incVal > emps.size()){
-		incVal = 18;
+		incVal = emps.size() - initIndex;
 	}
 
 	for (int i = initIndex; i < initIndex + incVal; i++){
 		empBlock.push_back(emps.at(i));
-		j++;
 	}
 	return empBlock;
 }
 
-// get the integer value of empid
+// Get the integer value of empid
 int getEmpId (vector<string> &empBlock, int index) {
 	string s = empBlock[index];
 	int pos = s.find(',');
 	return stoi(s.substr(0, pos));
 }
 
+// Classic merge sort with eid
 void merge(vector<string> &empBlock, int left, int mid, int right) {
 	int i = 0, j = 0, k = left;
 	int n1 = mid-left+1;
@@ -90,33 +94,54 @@ void mergeSortBlock(vector<string> &empBlock, int left, int right) {
 	merge(empBlock, left, mid, right);
 }
 
-void sort() {
-	vector<string> emps, empBlock;
-	// Index to find next block of employees (inc by 22)
-	int initIndex = 0, i = 0, j = 1;
-	emps = getEmployeesFromFile();
+// Get blocks of employees and output to the file
+void getBlocksAndOutput(vector<string> &emps) {
+	vector<string> empBlock;
+	// Index to find next block of employees (inc by 22*runNum)
+	int initIndex = 0, i = 0;
 
-	// Get block of 22 employees
+	// Loop for one run to sort blocks
 	while (initIndex <= emps.size()) {
-		empBlock = getEmployeeBlock(emps, initIndex);
+		empBlock = getEmployeeBlock(emps, initIndex, 22*runNum);
 
 		mergeSortBlock(empBlock, 0, empBlock.size()-1);
 
-		cout << "Sorted Block " << j << ": " << endl;
+		//Write each newly sorted block to file
+		ofstream outputFile;
+		outputFile.open("EmpSorted.csv", ios_base::app);
+
 		for (i = 0; i < empBlock.size(); i++){
-			cout << getEmpId(empBlock, i) << endl;
+			outputFile << empBlock[i] << endl;
 		}
-		j++;
+		outputFile.close();
 
 		// Starting index of next block
-		initIndex += 22;
+		initIndex += 22*runNum;
+	}
+}
+
+// Do multiple runs increasing the block size to sort previously sorted blocks
+void sort() {
+	vector<string> emps;
+	if (runNum == 1){
+		emps = getEmployeesFromFile("Emp.csv");
 	}
 
+	while (22*runNum <= emps.size()) {
+		if (runNum > 1) {
+			emps = getEmployeesFromFile("EmpSorted.csv");
+			remove("EmpSorted.csv");
+		}
 
+		getBlocksAndOutput(emps);
 
+		runNum++;
+	}
 }
 
 int main() {
+	// Remove leftover results
+	remove("EmpSorted.csv");
 	sort();
 
 	return 0;
