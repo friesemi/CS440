@@ -271,6 +271,300 @@ int makeDeptRuns(int numBlocks, fstream &deptin) {
   return numRuns;
 }
 
+int getSmallestEmp(vector<EmpBlock> emps) {
+  priority_queue<int, vector<int>, greater<int>> sortedEids;
+  int smallest;
+
+  for (int i = 0; i < emps.size(); i++) {
+    sortedEids.push(emps[i].eid);
+  }
+
+  while (sortedEids.empty() == false && sortedEids.top() == -1) {
+    sortedEids.pop();
+  }
+
+  if (sortedEids.empty() == true) {
+    return -1;
+  }
+
+  for (int i = 0; i < emps.size(); i++) {
+    if (emps[i].eid == sortedEids.top()) {
+      return i;
+    }
+  }
+}
+
+int getSmallestDept(vector<DeptBlock> depts) {
+  priority_queue<int, vector<int>, greater<int>> sortedManagerIds;
+  int smallest;
+
+  for (int i = 0; i < depts.size(); i++) {
+    sortedManagerIds.push(depts[i].managerid);
+  }
+
+  while (sortedManagerIds.empty() == false && sortedManagerIds.top() == -1) {
+    sortedManagerIds.pop();
+  }
+
+  if (sortedManagerIds.empty() == true) {
+    return -1;
+  }
+
+  for (int i = 0; i < depts.size(); i++) {
+    if (depts[i].managerid == sortedManagerIds.top()) {
+      return i;
+    }
+  }
+}
+
+EmpBlock getNextEmp(int runNum, vector<int> &empRunsFp) {
+  string filename;
+  fstream run;
+  string line, word;
+  EmpBlock emp;
+
+  filename = "empRun" + to_string(runNum);
+  run.open(filename, ios::in);
+  run.seekg(empRunsFp[runNum], ios_base::beg);
+
+  // Get the employee
+  if (getline(run, line, '\n')) {
+      // turn line into a stream
+      stringstream s(line);
+      // gets everything in stream up to comma
+      getline(s, word,',');
+      emp.eid = stoi(word);
+      getline(s, word, ',');
+      emp.ename = word;
+      getline(s, word, ',');
+      emp.age = stoi(word);
+      getline(s, word, ',');
+      emp.salary = stod(word);
+  } else {
+      emp.eid = -1;
+  }
+
+  empRunsFp[runNum] = run.tellg();
+
+  run.close();
+
+  return emp;
+}
+
+DeptBlock getNextDept(int runNum, vector<int> &deptRunsFp) {
+  string filename;
+  fstream run;
+  string line, word;
+  DeptBlock dept;
+
+  filename = "deptRun" + to_string(runNum);
+  run.open(filename, ios::in);
+  run.seekg(deptRunsFp[runNum], ios_base::beg);
+
+  // Get the dept
+  if (getline(run, line, '\n')) {
+      stringstream s(line);
+      getline(s, word,',');
+      dept.did = stoi(word);
+      getline(s, word, ',');
+      dept.dname = word;
+      getline(s, word, ',');
+      dept.budget = stod(word);
+      getline(s, word, ',');
+      dept.managerid = stoi(word);
+  } else {
+      dept.did = -1;
+  }
+
+  deptRunsFp[runNum] = run.tellg();
+
+  run.close();
+
+  return dept;
+}
+
+void addEmpBlocks(vector<EmpBlock> &empBlocks, vector<EmpBlock> &nextEmps, vector<int> &empRunsFp, int numBlocks) {
+  int smallest;
+  EmpBlock emp;
+
+  // Get the run that has the next smallest emp eid
+  smallest = getSmallestEmp(nextEmps);
+
+  // If there are no more next employees left, return -1
+  if (smallest == -1) {
+    emp.eid = -1;
+    empBlocks.push_back(emp);
+  }
+  else {
+    empBlocks.push_back(nextEmps[smallest]);
+
+    // Update the nextEmps
+    emp = getNextEmp(smallest, empRunsFp);
+    nextEmps[smallest] = emp;
+  }
+
+  mergeSortBlockEmp(empBlocks, 0, empBlocks.size()-1);
+}
+
+void addDeptBlocks(vector<DeptBlock> &deptBlocks, vector<DeptBlock> &nextDepts, vector<int> &deptRunsFp, int numBlocks) {
+  int smallest;
+  DeptBlock dept;
+
+  // Get the run that has the next smallest dept managerid
+  smallest = getSmallestDept(nextDepts);
+
+  // If there are no more next depts left, return -1
+  if (smallest == -1) {
+    dept.managerid = -1;
+    deptBlocks.push_back(dept);
+  }
+  else {
+    deptBlocks.push_back(nextDepts[smallest]);
+
+    // Update the nextDepts
+    dept = getNextDept(smallest, deptRunsFp);
+    nextDepts[smallest] = dept;
+  }
+
+  mergeSortBlockDept(deptBlocks, 0, deptBlocks.size()-1);
+}
+
+void initNextEmps(vector<EmpBlock> &nextEmps, vector<int> &empRunsFp, int numEmpRuns) {
+  string filename, line, word;
+  EmpBlock emp;
+  fstream run;
+
+  // Get first line from all emp runs
+  for (int i = 0; i < numEmpRuns; i++) {
+    filename = "empRun" + to_string(i);
+    run.open(filename, ios::in);
+
+    // Get the employee
+    if (getline(run, line, '\n')) {
+        // turn line into a stream
+        stringstream s(line);
+        // gets everything in stream up to comma
+        getline(s, word,',');
+        emp.eid = stoi(word);
+        getline(s, word, ',');
+        emp.ename = word;
+        getline(s, word, ',');
+        emp.age = stoi(word);
+        getline(s, word, ',');
+        emp.salary = stod(word);
+    } else {
+        emp.eid = -1;
+    }
+
+    nextEmps.push_back(emp);
+
+    empRunsFp.push_back(run.tellg());
+
+    run.close();
+  }
+}
+
+void initNextDepts(vector<DeptBlock> &nextDepts, vector<int> &deptRunsFp, int numDeptRuns) {
+  string filename, line, word;
+  DeptBlock dept;
+  fstream run;
+
+  // Get first line from all dept runs
+  for (int i = 0; i < numDeptRuns; i++) {
+    filename = "deptRun" + to_string(i);
+    run.open(filename, ios::in);
+
+    // Get the dept
+    if (getline(run, line, '\n')) {
+        stringstream s(line);
+        getline(s, word,',');
+        dept.did = stoi(word);
+        getline(s, word, ',');
+        dept.dname = word;
+        getline(s, word, ',');
+        dept.budget = stod(word);
+        getline(s, word, ',');
+        dept.managerid = stoi(word);
+    } else {
+        dept.did = -1;
+    }
+
+    nextDepts.push_back(dept);
+
+    deptRunsFp.push_back(run.tellg());
+
+    run.close();
+  }
+}
+
+void fillEmpBlocks(vector<EmpBlock> &empBlocks, vector<EmpBlock> &nextEmps, vector<int> &empRunsFp, int numBlocks) {
+  int smallest;
+  EmpBlock emp;
+
+  // Fill half the blocks with the smallest employees
+  for (int i = 0; i < numBlocks/2; i++) {
+    // Get the run that has the next smallest emp eid
+    smallest = getSmallestEmp(nextEmps);
+    empBlocks.push_back(nextEmps[smallest]);
+
+    // Update the nextEmps
+    emp = getNextEmp(smallest, empRunsFp);
+    nextEmps[smallest] = emp;
+  }
+
+  // Sort the current employees
+  mergeSortBlockEmp(empBlocks, 0, empBlocks.size()-1);
+}
+
+void fillDeptBlocks(vector<DeptBlock> &deptBlocks, vector<DeptBlock> &nextDepts, vector<int> &deptRunsFp, int numBlocks) {
+  int smallest;
+  DeptBlock dept;
+
+  // Fill half the blocks with the smallest employees
+  for (int i = 0; i < numBlocks/2; i++) {
+    // Get the run that has the next smallest emp eid
+    smallest = getSmallestDept(nextDepts);
+    deptBlocks.push_back(nextDepts[smallest]);
+
+    // Update the nextEmps
+    dept = getNextDept(smallest, deptRunsFp);
+    nextDepts[smallest] = dept;
+  }
+
+  // Sort the current employees
+  mergeSortBlockDept(deptBlocks, 0, deptBlocks.size()-1);
+}
+
+void mergeJoin(int numBlocks, int numEmpRuns, int numDeptRuns, fstream &joinout) {
+  vector<int> empRunsFp;
+  vector<int> deptRunsFp;
+  vector<EmpBlock> empBlocks;
+  vector<DeptBlock> deptBlocks;
+  vector<EmpBlock> nextEmps;
+  vector<DeptBlock> nextDepts;
+
+  // Initialize the nextEmps
+  initNextEmps(nextEmps, empRunsFp, numEmpRuns);
+
+  // Fill the empBlocks
+  fillEmpBlocks(empBlocks, nextEmps, empRunsFp, numBlocks);
+
+  // Initialize the nextDepts
+  initNextDepts(nextDepts, deptRunsFp, numDeptRuns);
+
+  // Fill the deptBlocks
+  fillDeptBlocks(deptBlocks, nextDepts, deptRunsFp, numBlocks);
+
+  // Check if all of the indexes of empBlocks or deptBlocks contain -1, if yes, we are done. Time to exit
+  // Otherwise, compare the two found values
+  // if match join. Delete deptBlocks and grab next
+  // If empBlocks < deptBlocks, delete empBlocks, grab next smallest emp.
+  // If empBlocks > deptBlocks, delete deptBlocks, grab next smallest dept.
+
+  //MOVE UP WHEN JOIN ONLY ON Dept
+  //WHEN NO MATCH, MOVE UP ON SMALLER ONE
+}
+
 int main() {
   // open file streams to read and write
   fstream empin;
@@ -278,7 +572,7 @@ int main() {
   fstream joinout;
   empin.open("Emp.csv", ios::in);
   deptin.open("Dept.csv", ios::in);
-  joinout.open("Join.csv", ios::out | ios::app);
+  joinout.open("Join.csv", ios::out | ios::trunc);
   int numBlocks = 22;
   int numEmpRuns, numDeptRuns;
 
@@ -287,7 +581,7 @@ int main() {
   numDeptRuns = makeDeptRuns(numBlocks, deptin);
 
   // Merge and join
-
+  mergeJoin(numBlocks, numEmpRuns, numDeptRuns, joinout);
 
 /*
   // opens new filestream for dept relation (needs to read in a new one each time a new emp block is seen)
