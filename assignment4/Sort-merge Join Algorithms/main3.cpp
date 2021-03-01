@@ -3,6 +3,8 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <vector>
+#include <stdio.h>
 
 using namespace std;
 
@@ -72,9 +74,9 @@ DeptBlock grabDept(fstream &deptin) {
 
 //Print out the attributes from emp and dept when a join condition is met
 void printJoin(EmpBlock emp, DeptBlock dept, fstream &fout) {
-    fout << emp.eid << ',' << emp.ename << ',' << emp.age << ','
-        << emp.salary << ',' << dept.did << ',' << dept.dname << ','
-        << dept.budget << "\n";
+    fout << dept.did << ',' << dept.dname << ','
+        << dept.budget << ',' << emp.eid << ',' << emp.ename << ',' << emp.age << ','
+        << emp.salary << "\n";
 }
 
 //Print out the attributes from emp
@@ -542,6 +544,10 @@ void mergeJoin(int numBlocks, int numEmpRuns, int numDeptRuns, fstream &joinout)
   vector<DeptBlock> deptBlocks;
   vector<EmpBlock> nextEmps;
   vector<DeptBlock> nextDepts;
+  EmpBlock currEmp;
+  DeptBlock currDept;
+  int empIndex, deptIndex;
+  string filename;
 
   // Initialize the nextEmps
   initNextEmps(nextEmps, empRunsFp, numEmpRuns);
@@ -555,11 +561,69 @@ void mergeJoin(int numBlocks, int numEmpRuns, int numDeptRuns, fstream &joinout)
   // Fill the deptBlocks
   fillDeptBlocks(deptBlocks, nextDepts, deptRunsFp, numBlocks);
 
-  // Check if all of the indexes of empBlocks or deptBlocks contain -1, if yes, we are done. Time to exit
-  // Otherwise, compare the two found values
-  // if match join. Delete deptBlocks and grab next
-  // If empBlocks < deptBlocks, delete empBlocks, grab next smallest emp.
-  // If empBlocks > deptBlocks, delete deptBlocks, grab next smallest dept.
+  // Continue to join until all possibilities have been checked
+  while (true) {
+    // Check if all of the indexes of empBlocks or deptBlocks contain -1, if yes, we are done. Time to exit
+    for (int i = 0; empIndex < empBlocks.size(); empIndex++) {
+      if (empBlocks[empIndex].eid != -1) {
+        currEmp = empBlocks[empIndex];
+        break;
+      }
+      else if (empIndex == empBlocks.size() - 1) {
+        // Remove run files before exiting
+        for (int i = 0; i < numEmpRuns; i++) {
+          filename = "empRun" + to_string(i);
+          remove(filename.c_str());
+        }
+        for (int i = 0; i < numDeptRuns; i++) {
+          filename = "deptRun" + to_string(i);
+          remove(filename.c_str());
+        }
+
+        exit(0);
+      }
+    }
+    for (deptIndex = 0; deptIndex < deptBlocks.size(); deptIndex++) {
+      if (deptBlocks[deptIndex].managerid != -1) {
+        currDept = deptBlocks[deptIndex];
+
+        break;
+      }
+      else if (deptIndex == deptBlocks.size() - 1) {
+        // Remove run files before exiting
+        for (int i = 0; i < numEmpRuns; i++) {
+          filename = "empRun" + to_string(i);
+          remove(filename.c_str());
+        }
+        for (int i = 0; i < numDeptRuns; i++) {
+          filename = "deptRun" + to_string(i);
+          remove(filename.c_str());
+        }
+
+        exit(0);
+      }
+    }
+
+    // Otherwise, compare the two found values
+    // if match join. Delete deptBlocks and grab next
+    if (currEmp.eid == currDept.managerid) {
+      joinout.open("Join.csv", ios::out | ios::app);
+      printJoin(currEmp, currDept, joinout);
+      joinout.close();
+      deptBlocks.erase(deptBlocks.begin()+deptIndex);
+      addDeptBlocks(deptBlocks, nextDepts, deptRunsFp, numBlocks);
+    }
+    // If empBlocks < deptBlocks, delete empBlocks, grab next smallest emp.
+    else if (currEmp.eid < currDept.managerid) {
+      empBlocks.erase(empBlocks.begin()+empIndex);
+      addEmpBlocks(empBlocks, nextEmps, empRunsFp, numBlocks);
+    }
+    // If empBlocks > deptBlocks, delete deptBlocks, grab next smallest dept.
+    else if (currEmp.eid > currDept.managerid) {
+      deptBlocks.erase(deptBlocks.begin()+deptIndex);
+      addDeptBlocks(deptBlocks, nextDepts, deptRunsFp, numBlocks);
+    }
+  }
 
   //MOVE UP WHEN JOIN ONLY ON Dept
   //WHEN NO MATCH, MOVE UP ON SMALLER ONE
@@ -573,6 +637,7 @@ int main() {
   empin.open("Emp.csv", ios::in);
   deptin.open("Dept.csv", ios::in);
   joinout.open("Join.csv", ios::out | ios::trunc);
+  joinout.close();
   int numBlocks = 22;
   int numEmpRuns, numDeptRuns;
 
@@ -583,26 +648,5 @@ int main() {
   // Merge and join
   mergeJoin(numBlocks, numEmpRuns, numDeptRuns, joinout);
 
-/*
-  // opens new filestream for dept relation (needs to read in a new one each time a new emp block is seen)
-
-
-  flag = true
-  while (flag) {
-      // FOR BLOCK IN RELATION DEPT
-      DeptBlock deptBlock = grabDept(deptin);
-
-      // in theory these would iterate through the two blocks: empBlock and deptBlock
-      // but since both only contain one tuple, no iteration is needed
-      if (deptBlock.did == -1) {
-          flag = false;
-      } else {
-          // check join condition and print join to output file
-          if (deptBlock.managerid == empBlock.eid) {
-              printJoin(empBlock, deptBlock, joinout);
-          }
-      }
-  }
-  */
   return 0;
 }
